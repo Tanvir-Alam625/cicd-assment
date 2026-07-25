@@ -1,4 +1,5 @@
 name: CI/CD Pipeline
+
 on:
   push:
     branches:
@@ -6,17 +7,20 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   Test:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4 
+
     - name: Node.js setup
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v4
       with:
         node-version: '24'
         cache: 'npm'
+
     - name: Install dependencies
       run: npm ci
     
@@ -26,17 +30,27 @@ jobs:
       run: |
         npm run check > test-results.log 
         cat test-results.log
+
     - name: Upload test results 
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-results
         path: test-results.log
+
   Deploy:
-   runs-on: ubuntu-latest
-   needs: Test
-   steps: 
-    - name: Connect EC2 Instance
-      uses: appleboy/ssh-action@v0.1.5
+    runs-on: ubuntu-latest
+    needs: Test
+    steps: 
+    - name: Download test results artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: test-results
+
+    - name: Print test results locally
+      run: cat test-results.log
+
+    - name: Connect EC2 Instance and Deploy
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
@@ -45,7 +59,7 @@ jobs:
         script: |
           cd /home/ubuntu/app
           git pull origin main
-          npm install
+          npm install --production
           pm2 restart --name "APP:3000" npm -- start
           pm2 save
-          sudo systemctl restart nginx 
+          sudo systemctl restart nginx

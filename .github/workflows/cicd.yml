@@ -48,6 +48,16 @@ jobs:
 
     - name: Print test results locally
       run: cat test-results.log
+    
+    - name: Copy log file into EC2 Instance via SCP
+      uses: appleboy/scp-action@v0.1.7 
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        source: "test-results.log"
+        target: "/home/ubuntu/app-logs" 
 
     - name: Connect EC2 Instance and Deploy
       uses: appleboy/ssh-action@v1.0.3

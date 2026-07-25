@@ -38,35 +38,24 @@ jobs:
         path: test-results.log
 
   Deploy:
-    runs-on: ubuntu-latest
-    needs: Test
-    steps: 
-    - name: Download test results artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: test-results
+      runs-on: self-hosted 
+      needs: Test
+      steps: 
+      - name: Download test results artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
 
-    - name: Print test results locally
-      run: cat test-results.log
-    
-    - name: Copy log file into EC2 Instance via SCP
-      uses: appleboy/scp-action@v0.1.7 
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.KEY }}
-        port: ${{ secrets.PORT }}
-        source: "test-results.log"
-        target: "/home/ubuntu/app-logs" 
+      - name: Move and Print test results locally on EC2
+        run: |
+          mkdir -p /home/ubuntu/app-logs
+          cp test-results.log /home/ubuntu/app-logs/test-results.log
+          echo "==== PRINTING TEST LOGS INSIDE EC2 ===="
+          cat /home/ubuntu/app-logs/test-results.log
+          echo "======================================="
 
-    - name: Connect EC2 Instance and Deploy
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.KEY }}
-        port: ${{ secrets.PORT }}
-        script: |
+      - name: Deploy Local Application Updates
+        run: |
           cd /home/ubuntu/app
           git pull origin main
           npm install --production

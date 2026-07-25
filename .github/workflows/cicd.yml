@@ -54,11 +54,11 @@ jobs:
           cat /home/ubuntu/app-logs/test-results.log
           echo "======================================="
 
-      - name: Deploy Local Application Updates
+      - name: Deploy Application Updates
         run: |
           cd /home/ubuntu/app
           git pull origin main
-          npm install --production
-          pm2 restart --name "APP:3000" npm -- start
+          npm install
+          pm2 restart "APP:3000" || pm2 start npm --name "APP:3000" -- start
           pm2 save
           sudo systemctl restart nginx

@@ -31,4 +31,20 @@ jobs:
       with:
         name: test-results
         path: test-results.log
-      
+  Deploy:
+   runs-on: ubuntu-latest
+   needs: Test
+   steps: 
+    - name: Connect EC2 Instance
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        script: |
+          cd /home/ubuntu/app
+          git pull origin main
+          npm install
+          pm2 restart --name "APP:3000" npm -- start
+          pm2 save
+          sudo systemctl restart nginx 
